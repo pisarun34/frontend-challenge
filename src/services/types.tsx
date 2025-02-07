@@ -5,7 +5,9 @@ export type Geocoding = {
     lon: number;
     country: string;
     state: string;
+    zip?: string;
 };
+
 
 export type LocationNames = {
     en: string;

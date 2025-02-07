@@ -1,8 +1,8 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { weatherQueries } from '../services/api';
-import { Autocomplete, TextField , List , ListItem , ListItemText} from '@mui/material';
+import { ListItem , ListItemText} from '@mui/material';
 import { CircularProgress, IconButton } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 
@@ -15,6 +15,7 @@ export default function CityItem({
     onRemove: () => void;
     onClick: () => void;
   }) {
+    const [showErrorAlert, setShowErrorAlert] = useState(false);
     const { data: weatherData, isLoading, error } = useQuery({
         ...weatherQueries.detail({ q: cityName , units: 'metric' }),
         enabled: !!cityName,
@@ -33,48 +34,44 @@ export default function CityItem({
     }
   
     if (error || !weatherData) {
-      return (
-        <ListItem sx={{ backgroundColor: 'white', boxShadow: 1, borderRadius: 2, mb: 1 }}>
-          <ListItemText primary={cityName} secondary="Failed to load weather data" />
-          <IconButton edge="end" onClick={onRemove}>
-            <DeleteIcon />
-          </IconButton>
-        </ListItem>
-      );
+      onRemove()
+      return null
     }
   
-    // 🌡️ ดึงอุณหภูมิและเวลาท้องถิ่น
+    // calculate local date time
     const temperature = weatherData.main.temp;
-    const utcTimestamp = weatherData.dt;  // เวลาปัจจุบัน (UTC) จาก OpenWeather API
-    const timezoneOffset = weatherData.timezone;  // การชดเชยเวลาจาก UTC (เช่น +7 ชั่วโมง สำหรับไทย = 25200 วินาที)
-
-    const localTimestamp = (utcTimestamp + timezoneOffset) * 1000;  // รวมเวลาและแปลงเป็นมิลลิวินาที
-
-    const localTime = new Date(localTimestamp).toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        hour12: true,  // ✅ ใช้ hour12 เพื่อแสดง AM/PM
-        timeZone: 'UTC'  // ใช้ 'UTC' เพื่อไม่ให้เบราว์เซอร์ชดเชยเวลาอีกครั้ง
+    const utcTimestamp = weatherData.dt;  
+    const timezoneOffset = weatherData.timezone; 
+    const localTimestamp = (utcTimestamp + timezoneOffset) * 1000; 
+    const localDateTime = new Date(localTimestamp).toLocaleString('en-GB', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'UTC'
     });
   
     return (
+      
         <ListItem
           sx={{ backgroundColor: 'white', boxShadow: 1, borderRadius: 2, mb: 1 }}
-          onClick={onClick}  // ✅ ทำงานเมื่อคลิกที่ ListItem ทั้งหมด (ยกเว้น IconButton)
+          onClick={onClick} 
           style={{ cursor: 'pointer' }}
         >
           <ListItemText
             primary={cityName}
-            secondary={`Local Time: ${localTime}`}
+            secondary={localDateTime}
           />
           <span className="text-2xl text-gray-700">{Math.round(temperature)}°C</span>
       
-          {/* ✅ หยุด Event จากการ Bubble ด้วย event.stopPropagation() */}
+          
           <IconButton
             edge="end"
             onClick={(e) => {
-              e.stopPropagation();  // หยุด Event ไม่ให้ Bubble ไปที่ ListItem
-              onRemove();           // เรียกฟังก์ชันลบเมือง
+              e.stopPropagation(); 
+              onRemove(); 
             }}
           >
             <DeleteIcon />

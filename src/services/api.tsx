@@ -41,12 +41,18 @@ type forecastFilters = {
 
 
 export const geocodingQueries = {
-    all: ["geo","1.0","direct"],
+    all: ["geo","1.0"],
     list: (filters: geocodingFilters) =>
       queryOptions({
-        queryKey: [...geocodingQueries.all,  filters ],
+        queryKey: [...geocodingQueries.all, "direct",  filters ],
         queryFn: ({ queryKey }) =>
           createQueryFn<Geocoding[]>(api, queryKey),
+      }),
+    zip: (filters: { zip: string }) =>
+      queryOptions({
+        queryKey: [...geocodingQueries.all, "zip", filters ],
+        queryFn: ({ queryKey }) =>
+          createQueryFn<Geocoding>(api, queryKey),
       }),
   };
 
