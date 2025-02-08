@@ -2,13 +2,12 @@
 import React from 'react';
 import { List } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { useCityContext } from '../context/CityContext';
-import CityItem from './CityItem';
+import { useWeatherContext } from '../context/WeatherContext';
+import CityItem from './WeatherItem';
 
 export default function CityList() {
-  const { state, dispatch } = useCityContext();
+  const { state, dispatch } = useWeatherContext();
   const router = useRouter();
-
   const handleRemoveCity = (cityName: string) => {
     dispatch({ type: 'REMOVE_CITY', payload: cityName });
   };

@@ -1,10 +1,12 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { useRouter, useParams } from 'next/navigation';
-import { useCityContext } from '../context/CityContext';
+import { useWeatherContext } from '../context/WeatherContext';
+import { useTemperatureContext } from '../context/TemperatureContext';
 import { useQuery } from '@tanstack/react-query';
-import CityDetail from '../app/weather/[cityName]/page';
+import WeatherDetail from '../app/weather/[cityName]/page';
+import TopNavBar from '../components/TopNavBar';
 
 // Mock dependencies
 jest.mock('next/navigation', () => ({
@@ -12,8 +14,12 @@ jest.mock('next/navigation', () => ({
   useParams: jest.fn()
 }));
 
-jest.mock('../context/CityContext', () => ({
-  useCityContext: jest.fn()
+jest.mock('../context/WeatherContext', () => ({
+  useWeatherContext: jest.fn()
+}));
+
+jest.mock('../context/TemperatureContext', () => ({
+  useTemperatureContext: jest.fn()
 }));
 
 jest.mock('@tanstack/react-query', () => ({
@@ -61,7 +67,7 @@ jest.mock('../services/api', () => ({
     }
   }));
 
-describe('CityDetail Component', () => {
+describe('WeatherDetail Component', () => {
     const mockRouterBack = jest.fn();
   
     beforeEach(() => {
@@ -108,9 +114,9 @@ describe('CityDetail Component', () => {
   
     test('renders error message if city is not found', () => {
       (useParams as jest.Mock).mockReturnValue({ cityName: 'NonExistentCity' });
-      (useCityContext as jest.Mock).mockReturnValue({ state: { selectedCities: [] } });
-  
-      render(<CityDetail />);
+      (useWeatherContext as jest.Mock).mockReturnValue({ state: { selectedCities: [] } });
+      (useTemperatureContext as jest.Mock).mockReturnValue({ state: { unit: 'metric', unitSymbol: '°C' } });
+      render(<WeatherDetail />);
   
       expect(screen.getByText('City not found. Please go back and select a city.')).toBeInTheDocument();
       const backButton = screen.getByText('Back to List');
@@ -120,41 +126,70 @@ describe('CityDetail Component', () => {
   
     test('displays loading spinner while fetching data', () => {
       (useParams as jest.Mock).mockReturnValue({ cityName: 'Bangkok' });
-      (useCityContext as jest.Mock).mockReturnValue({ state: { selectedCities: [{ name: 'Bangkok', lat: 13.75, lon: 100.5 }] } });
+      (useWeatherContext as jest.Mock).mockReturnValue({ state: { selectedCities: [{ name: 'Bangkok', lat: 13.75, lon: 100.5 }] } });
+      (useTemperatureContext as jest.Mock).mockReturnValue({ state: { unit: 'metric', unitSymbol: '°C' } });
       (useQuery as jest.Mock).mockReturnValue({
         isFetching: true,
         data: null
       });
   
-      render(<CityDetail />);
+      render(<WeatherDetail />);
   
       expect(screen.getByRole('progressbar')).toBeInTheDocument();
     });
   
     test('displays error message if forecast data cannot be fetched', () => {
       (useParams as jest.Mock).mockReturnValue({ cityName: 'Bangkok' });
-      (useCityContext as jest.Mock).mockReturnValue({ state: { selectedCities: [{ name: 'Bangkok', lat: 13.75, lon: 100.5 }] } });
+      (useWeatherContext as jest.Mock).mockReturnValue({ state: { selectedCities: [{ name: 'Bangkok', lat: 13.75, lon: 100.5 }] } });
+      (useTemperatureContext as jest.Mock).mockReturnValue({ state: { unit: 'metric', unitSymbol: '°C' } });
       (useQuery as jest.Mock).mockReturnValue({ isFetching: false, data: null });
   
-      render(<CityDetail />);
+      render(<WeatherDetail />);
   
       expect(screen.getByText('Unable to fetch forecast data. Please try again later.')).toBeInTheDocument();
     });
   
-    test('renders city details correctly when data is fetched', async () => {
+    test('renders city details in metric correctly when data is fetched', async () => {
       (useParams as jest.Mock).mockReturnValue({ cityName: 'Bangkok' });
-      (useCityContext as jest.Mock).mockReturnValue({ state: { selectedCities: [{ name: 'Bangkok', lat: 13.75, lon: 100.5 }] } });
+      (useWeatherContext as jest.Mock).mockReturnValue({ state: { selectedCities: [{ name: 'Bangkok', lat: 13.75, lon: 100.5 }] } });
+      (useTemperatureContext as jest.Mock).mockReturnValue({ state: { unit: 'metric', unitSymbol: '°C' } });
       (useQuery as jest.Mock).mockReturnValue({
         isFetching: false,
         data: mockWeatherData
       });
   
-      render(<CityDetail />);
+      render(<WeatherDetail />);
 
-      const temperatureElements = screen.getAllByText('30°');
+      const temperatureElements = screen.getAllByText('30 °C');
       expect(temperatureElements).toHaveLength(2);
       expect(screen.getByText('Bangkok')).toBeInTheDocument();
-      expect(screen.getByText('MIN 25°, MAX 35°')).toBeInTheDocument();
+      expect(screen.getByText('MIN 25 °C, MAX 35 °C')).toBeInTheDocument();
+      expect(screen.getByText('clear sky')).toBeInTheDocument();
+      expect(screen.getByText('Humidity')).toBeInTheDocument();
+      expect(screen.getByText('60%')).toBeInTheDocument();
+      expect(screen.getByText('Wind')).toBeInTheDocument();
+      expect(screen.getByText('5 km/h')).toBeInTheDocument();
+      expect(screen.getByText('Pressure')).toBeInTheDocument();
+      expect(screen.getByText('1012 mBar')).toBeInTheDocument();
+      expect(screen.getByText('Chance of rain')).toBeInTheDocument();
+      expect(screen.getByText('10%')).toBeInTheDocument();
+    });
+
+    test('renders city details in kelvin correctly when data is fetched', async () => {
+      (useParams as jest.Mock).mockReturnValue({ cityName: 'Bangkok' });
+      (useWeatherContext as jest.Mock).mockReturnValue({ state: { selectedCities: [{ name: 'Bangkok', lat: 13.75, lon: 100.5 }] } });
+      (useTemperatureContext as jest.Mock).mockReturnValue({ state: { unit: 'kelvin', unitSymbol: 'K' } });
+      (useQuery as jest.Mock).mockReturnValue({
+        isFetching: false,
+        data: mockWeatherData
+      });
+  
+      render(<WeatherDetail />);
+
+      const temperatureElements = screen.getAllByText('30 K');
+      expect(temperatureElements).toHaveLength(2);
+      expect(screen.getByText('Bangkok')).toBeInTheDocument();
+      expect(screen.getByText('MIN 25 K, MAX 35 K')).toBeInTheDocument();
       expect(screen.getByText('clear sky')).toBeInTheDocument();
       expect(screen.getByText('Humidity')).toBeInTheDocument();
       expect(screen.getByText('60%')).toBeInTheDocument();
@@ -168,12 +203,13 @@ describe('CityDetail Component', () => {
 
     test('renders correct weather icon when data is fetched', async () => {
         (useParams as jest.Mock).mockReturnValue({ cityName: 'Bangkok' });
-        (useCityContext as jest.Mock).mockReturnValue({ 
+        (useWeatherContext as jest.Mock).mockReturnValue({ 
           state: { selectedCities: [{ name: 'Bangkok', lat: 13.75, lon: 100.5 }] } 
         });
+        (useTemperatureContext as jest.Mock).mockReturnValue({ state: { unit: 'metric', unitSymbol: '°C' } });
         (useQuery as jest.Mock).mockReturnValue({ isFetching: false, data: mockWeatherData });
       
-        render(<CityDetail />);
+        render(<WeatherDetail />);
       
         const currentWeatherIcon = screen.getByTestId('current-weather-icon');
         expect(currentWeatherIcon).toHaveAttribute('src', 'http://openweathermap.org/img/wn/01d@2x.png');
@@ -205,12 +241,13 @@ describe('CityDetail Component', () => {
         };
       
         (useParams as jest.Mock).mockReturnValue({ cityName: 'Bangkok' });
-        (useCityContext as jest.Mock).mockReturnValue({ 
+        (useWeatherContext as jest.Mock).mockReturnValue({ 
           state: { selectedCities: [{ name: 'Bangkok', lat: 13.75, lon: 100.5 }] } 
         });
+        (useTemperatureContext as jest.Mock).mockReturnValue({ state: { unit: 'metric', unitSymbol: '°C' } });
         (useQuery as jest.Mock).mockReturnValue({ isFetching: false, data: incompleteData });
       
-        render(<CityDetail />);
+        render(<WeatherDetail />);
       
         expect(screen.getByText('Bangkok')).toBeInTheDocument();
         expect(screen.queryByText('clear sky')).not.toBeInTheDocument();
@@ -218,17 +255,82 @@ describe('CityDetail Component', () => {
 
       test('renders 24-hour forecast correctly when data is fetched', async () => {
         (useParams as jest.Mock).mockReturnValue({ cityName: 'Bangkok' });
-        (useCityContext as jest.Mock).mockReturnValue({ 
+        (useWeatherContext as jest.Mock).mockReturnValue({ 
           state: { selectedCities: [{ name: 'Bangkok', lat: 13.75, lon: 100.5 }] } 
         });
+        (useTemperatureContext as jest.Mock).mockReturnValue({ state: { unit: 'metric', unitSymbol: '°C' } });
         (useQuery as jest.Mock).mockReturnValue({ isFetching: false, data: mockWeatherData });
       
-        render(<CityDetail />);
+        render(<WeatherDetail />);
       
         expect(screen.getByText('24 HOURS FORECAST')).toBeInTheDocument();
       
-        const hourlyForecast = screen.getAllByText('30°');
+        const hourlyForecast = screen.getAllByText('30 °C');
         expect(hourlyForecast).toHaveLength(2);
+      });
+      test('toggles temperature unit when clicked', () => {
+        const mockDispatch = jest.fn();
+        
+        (useParams as jest.Mock).mockReturnValue({ cityName: 'Bangkok' });
+        (useWeatherContext as jest.Mock).mockReturnValue({ state: { selectedCities: [{ name: 'Bangkok', lat: 13.75, lon: 100.5 }] } });
+        (useTemperatureContext as jest.Mock).mockReturnValue({
+          state: { unit: 'metric', unitSymbol: '°C' },
+          dispatch: mockDispatch
+        });
+        (useQuery as jest.Mock).mockReturnValue({ isFetching: false, data: mockWeatherData });
+      
+        render(
+          <>
+            <TopNavBar />
+            <WeatherDetail />
+          </>
+        );
+      
+        const toggleButton = screen.getByRole('button', { name: '°C' });
+      
+        fireEvent.click(toggleButton);
+      
+        expect(mockDispatch).toHaveBeenCalledWith({ type: 'SET_UNIT', payload: 'imperial' });
+      });
+      test('updates temperature display after unit toggle', () => {
+        const mockDispatch = jest.fn();
+      
+        (useParams as jest.Mock).mockReturnValue({ cityName: 'Bangkok' });
+        (useWeatherContext as jest.Mock).mockReturnValue({ state: { selectedCities: [{ name: 'Bangkok', lat: 13.75, lon: 100.5 }] } });
+        (useTemperatureContext as jest.Mock).mockReturnValue({
+          state: { unit: 'metric', unitSymbol: '°C' },
+          dispatch: mockDispatch
+        });
+        (useQuery as jest.Mock).mockReturnValue({ isFetching: false, data: mockWeatherData });
+      
+        render(
+          <>
+            <TopNavBar />
+            <WeatherDetail />
+          </>
+        );
+      
+        const temperatureElementsMetric = screen.getAllByText('30 °C');
+        expect(temperatureElementsMetric).toHaveLength(2);
+      
+        const toggleButton = screen.getByRole('button', { name: '°C' });
+      
+        fireEvent.click(toggleButton);
+      
+        (useTemperatureContext as jest.Mock).mockReturnValue({
+          state: { unit: 'imperial', unitSymbol: '°F' },
+          dispatch: mockDispatch
+        });
+      
+        render(
+          <>
+            <TopNavBar />
+            <WeatherDetail />
+          </>
+        );
+      
+        const temperatureElementsImperial = screen.getAllByText('30 °F');
+        expect(temperatureElementsImperial).toHaveLength(2);
       });
   });
   

@@ -5,11 +5,11 @@ import { geocodingQueries } from '../../services/api';
 import { Geocoding } from '../../services/types';
 import { useDebounce } from '../../hooks/useDebounce';
 import { Autocomplete, TextField} from '@mui/material';
-import CityList from '../../components/CityList';
-import { useCityContext } from '../../context/CityContext';
+import CityList from '../../components/WeatherList';
+import { useWeatherContext } from '../../context/WeatherContext';
 
-export default function CitySearch() {
-    const { state, dispatch } = useCityContext();
+export default function WeatherSearch() {
+    const { dispatch } = useWeatherContext();
     const [query, setQuery] = useState('');
 
     // Debounce query to prevent rapid API calls
@@ -50,7 +50,6 @@ export default function CitySearch() {
     ? [{ ...suggestions, id: `${suggestions.name}-${suggestions.country}-${suggestions.lat}-${suggestions.lon}` }]
     : [];
 
-
     return (
       <div className="w-full min-h-screen bg-gray-100 p-4">
         <div className="bg-white shadow-md p-3 flex items-center justify-between rounded-md mb-4 w-full">
@@ -86,6 +85,7 @@ export default function CitySearch() {
               )}
           />
         </div>
+
         <CityList />
       </div>
     );

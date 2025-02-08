@@ -14,7 +14,7 @@ const initialState: State = {
   selectedCities: [],
 };
 
-function cityReducer(state: State, action: Action): State {
+function weatherReducer(state: State, action: Action): State {
   switch (action.type) {
     case 'ADD_CITY':
       if (state.selectedCities.find(city => city.name === action.payload.name)) {
@@ -33,7 +33,7 @@ function cityReducer(state: State, action: Action): State {
   }
 }
 
-const CityContext = createContext<{
+const WeatherContext = createContext<{
   state: State;
   dispatch: React.Dispatch<Action>;
 }>({
@@ -41,13 +41,13 @@ const CityContext = createContext<{
   dispatch: () => null,
 });
 
-export const CityProvider = ({ children }: { children: ReactNode }) => {
-  const [state, dispatch] = useReducer(cityReducer, initialState);
+export const WeatherProvider = ({ children }: { children: ReactNode }) => {
+  const [state, dispatch] = useReducer(weatherReducer, initialState);
   return (
-    <CityContext.Provider value={{ state, dispatch }}>
+    <WeatherContext.Provider value={{ state, dispatch }}>
       {children}
-    </CityContext.Provider>
+    </WeatherContext.Provider>
   );
 };
 
-export const useCityContext = () => useContext(CityContext);
+export const useWeatherContext = () => useContext(WeatherContext);

@@ -2,16 +2,18 @@
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button, Typography , CircularProgress} from '@mui/material';
-import { useCityContext } from '../../../context/CityContext';
+import { useWeatherContext } from '../../../context/WeatherContext';
 import { forecastQueries } from '../../../services/api';
 import { useQuery } from '@tanstack/react-query';
+import { useTemperatureContext } from '../../../context/TemperatureContext';
 
-export default function CityDetail() {
+export default function WeatherDetail() {
+  const { state : temperatureState } = useTemperatureContext();
   const { cityName } = useParams();
   const decodedCityName = Array.isArray(cityName) 
-  ? decodeURIComponent(cityName[0])  // ถ้าเป็น array ให้ใช้ค่าตัวแรก
-  : decodeURIComponent(cityName);    // ถ้าเป็น string ให้ถอดรหัสตรง ๆ
-  const { state } = useCityContext();
+  ? decodeURIComponent(cityName[0]) 
+  : decodeURIComponent(cityName);
+  const { state } = useWeatherContext();
   const router = useRouter();
 
   const city = state.selectedCities.find(city => city.name === decodedCityName);
@@ -33,7 +35,7 @@ export default function CityDetail() {
   }
 
   const { data: forecast, isFetching } = useQuery({
-    ...forecastQueries.detail({ lat: city.lat , lon: city.lon , cnt: 8 , units: 'metric' }),
+    ...forecastQueries.detail({ lat: city.lat , lon: city.lon , cnt: 8 , units: temperatureState.unit }),
   });
 
   if (isFetching) {
@@ -73,7 +75,7 @@ export default function CityDetail() {
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
           }) : 'Date Unavailable'}</Typography>
           <Typography variant="body2" className="text-gray-500">
-            MIN {currentWeather?.main?.temp_min ? Math.round(currentWeather.main.temp_min) : '--'}°, MAX {currentWeather?.main?.temp_max ? Math.round(currentWeather.main.temp_max) : '--'}°
+            MIN {currentWeather?.main?.temp_min ? Math.round(currentWeather.main.temp_min) : '--'} {temperatureState.unitSymbol}, MAX {currentWeather?.main?.temp_max ? Math.round(currentWeather.main.temp_max) : '--'} {temperatureState.unitSymbol}
           </Typography>
         </div>
   
@@ -90,7 +92,7 @@ export default function CityDetail() {
             <div className="w-24 h-24 mx-auto my-1 bg-gray-200 flex items-center justify-center">No Icon</div>
           )}
           <Typography variant="h2" className="text-6xl font-bold">
-            {currentWeather?.main?.temp ? Math.round(currentWeather.main.temp) : '--'}°
+            {currentWeather?.main?.temp ? Math.round(currentWeather.main.temp) : '--'} {temperatureState.unitSymbol}
           </Typography>
           <Typography variant="h6" className="text-gray-500 mt-2 capitalize">
             {currentWeather?.weather?.[0]?.description || 'Description Unavailable'}
@@ -124,7 +126,7 @@ export default function CityDetail() {
                 ) : (
                   <div className="w-16 h-16 mx-auto my-1 bg-gray-200 flex items-center justify-center">No Icon</div>
                 )}
-                <Typography variant="body1">{item?.main?.temp ? Math.round(item.main.temp) : '--'}°</Typography>
+                <Typography variant="body1">{item?.main?.temp ? Math.round(item.main.temp) : '--'} {temperatureState.unitSymbol}</Typography>
               </div>
             )) : (
               <Typography variant="body2">No Forecast Data Available</Typography>
